@@ -1,7 +1,10 @@
 import sqlite3
+import random
+
+DB_PATH = "db\cryptolibs.db"
 
 def add_user(id):
-    conn = sqlite3.connect("cryptolibs.db")
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("INSERT OR IGNORE INTO 'users' ('user_id') VALUES (?)", (id,))
     cur.execute("INSERT OR IGNORE INTO 'active_users' ('user_id') VALUES (?)", (id,))
@@ -9,14 +12,14 @@ def add_user(id):
     conn.close()
 
 def del_active_user(id):
-    conn = sqlite3.connect("cryptolibs.db")
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(f"DELETE FROM 'active_users' WHERE user_id='{id}'")
     conn.commit()
     conn.close()
 
 def count_user():
-    conn = sqlite3.connect("cryptolibs.db")
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("SELECT COUNT() FROM users")
     count = cur.fetchall()[0][0]
@@ -24,174 +27,9 @@ def count_user():
     conn.close()
     return count
 
-def add_item(ccode, cname, name, avtor, link, disc):
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("INSERT INTO 'articles' ('category_code', 'category_name', 'name', 'avtor', 'link', 'subscribe') VALUES (?, ?, ?, ?, ?, ?)", (ccode, cname, name, avtor, link, disc,))
-    conn.commit()
-    conn.close()
-
-
-
-def get_categories():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT category_code, category_name FROM articles")
-    categories = cur.fetchall()
-    conn.close()
-    return categories
-
-def get_callback():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT category_code FROM articles")
-    categories = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in categories:
-        callback.append(item[0])
-    return callback
-
-def get_callback_articles():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM articles")
-    articles_callback = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in articles_callback:
-        callback.append(item[0])
-    return callback 
-
-def get_items(category_code):
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM articles WHERE category_code='{category_code}'")
-    articles = cur.fetchall()
-    conn.close()
-    return articles
-
-def get_articles(id_article):
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute(f"SELECT * FROM articles WHERE id='{id_article}'")
-    articles = cur.fetchall()
-    conn.close()
-    return articles
-
-
-#._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._._
-
-def get_add_callback():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT category_code FROM articles")
-    categories = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in categories:
-        callback.append(f"add:{item[0]}")
-    callback.append("create_category")
-    return callback
-
-def get_add_callback():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT category_code FROM articles")
-    categories = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in categories:
-        callback.append(f"add:{item[0]}")
-    callback.append("create_category")
-    return callback
-
-def get_add_category_info(key):
-    new_key = key[key.find(":") + 1 : ]
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute(f"SELECT DISTINCT category_name FROM articles WHERE category_code='{new_key}'")
-    data = []
-    data.append(cur.fetchall()[0][0])
-    data.append(new_key)
-    conn.close()
-    return data
-
-#.......................................
-
-def get_del_callback():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT DISTINCT category_code FROM articles")
-    categories = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in categories:
-        callback.append(f"del:{item[0]}")
-    return callback
-
-def get_del_callback_articles():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM articles")
-    articles_callback = cur.fetchall()
-    conn.close()
-    callback = []
-    for item in articles_callback:
-        callback.append(f"del:{item[0]}")
-    return callback 
-
-def del_item(id):
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute(f"DELETE FROM 'articles' WHERE id='{id}'")
-    conn.commit()
-    conn.close()
-
-#__________________________________________
-
-def get_all_user_id():
-    user_id = []
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("SELECT user_id FROM users")
-    data = cur.fetchall()
-    for id in data:
-        user_id.append(id[0])
-    conn.commit()
-    conn.close()
-    return user_id
-
-
-def get_notify_article():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    notify_message = []
-    cur.execute("SELECT notify_text FROM notify_articles")
-    data = cur.fetchall()
-    conn.commit()
-    conn.close()
-    for item in data:
-        notify_message.append(item[0])
-    return notify_message
-
-def add_notify_article(text):
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("INSERT INTO 'notify_articles' ('notify_text') VALUES (?)", (text,))
-    conn.commit()
-    conn.close()
-
-def del_notify_article():
-    conn = sqlite3.connect("cryptolibs.db")
-    cur = conn.cursor()
-    cur.execute("DELETE FROM 'notify_articles'")
-    conn.commit()
-    conn.close()
-
 def get_all_active_user_id():
     user_id = []
-    conn = sqlite3.connect("cryptolibs.db")
+    conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute("SELECT user_id FROM active_users")
     data = cur.fetchall()
@@ -200,3 +38,91 @@ def get_all_active_user_id():
     conn.commit()
     conn.close()
     return user_id
+
+
+#_______________________________________________________________________________________________
+
+def category(key):
+    category = []
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute("SELECT * FROM category")
+        data = cur.fetchall()
+        if key == "get":
+            for item in data:
+                category.append([f"get:{item[0]}", item[1]])
+        if key == "add":
+            for item in data:
+                category.append([f"add:{item[0]}", item[1]])
+        if key == "del":
+            for item in data:
+                category.append([f"del:{item[0]}", item[1]])
+        if key == "article_del":
+            for item in data:
+                category.append([f"article_del:{item[0]}", item[1]])
+#здесь callbacks                
+        if key == "call_get":
+            for item in data:
+                category.append(f"get:{item[0]}")
+        if key == "call_add":
+            for item in data:
+                category.append(f"add:{item[0]}")
+        if key == "call_del":
+            for item in data:
+                category.append(f"del:{item[0]}")
+    return category[::-1]
+
+def article(key, choose):
+    article = []
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT * FROM articles WHERE category_id='{key}'")
+        data = cur.fetchall()
+        for item in data:
+            if choose == "get":
+                article.append([f"article_get:{item[0]}", item[1], item[2], item[3], item[4], item[5]])
+            if choose == "add":
+                article.append([f"article_add:{item[0]}", item[1], item[2], item[3], item[4], item[5]])
+            if choose == "del":
+                article.append([f"article_del_call:{item[0]}", item[1], item[2], item[3], item[4], item[5]])
+            
+            if choose == "call_get":
+                article.append(f"article_get:{item[0]}")
+            if choose == "call_add":
+                article.append(f"article_add:{item[0]}")
+            if choose == "call_del":
+                article.append(f"article_del:{item[0]}")
+    return article
+
+def article_data(key):
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute(f"SELECT * FROM articles WHERE id='{key}'")
+        data = cur.fetchall()
+        return data
+
+def category_add(name):
+    id = random.randint(10000000, 99999999)
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute("INSERT INTO 'category' ('id', 'category_name') VALUES (?, ?)", (id, name,))
+        con.commit()
+
+def category_del(key):
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute(f"DELETE FROM category WHERE id='{key}'")
+        cur.execute(f"DELETE FROM articles WHERE category_id='{key}'")
+        con.commit()
+
+def article_add(cid, name, author, discr, link):
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute("INSERT INTO 'articles' ('category_id', 'name', 'author', 'description', link) VALUES (?, ?, ?, ?, ?)", (cid, name, author, discr, link))
+        con.commit()
+
+def article_del(key):
+    with sqlite3.connect(DB_PATH) as con:
+        cur = con.cursor()
+        cur.execute(f"DELETE FROM articles WHERE id='{key}'")
+        con.commit()

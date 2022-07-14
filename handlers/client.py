@@ -1,3 +1,4 @@
+from email import message
 from aiogram import Dispatcher, types
 from aiogram.dispatcher.filters import Text
 import aiogram.utils.markdown as fmt
@@ -5,12 +6,13 @@ import aiogram.utils.markdown as fmt
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 import urlextract
+from keyboards.katalog import article_kb, article_kb_info, category_kb
 
 from loader import dp, bot
 from config.config import admin_id
-from keyboards.keyboard import  key_k_1, key_k_0, key_k_2, main_menu, cancel_btn, main_menu_admin_1
+from keyboards.keyboard import main_menu, cancel_btn, main_menu_admin_1
 
-from db.db_api import add_user, count_user, get_articles, get_callback, get_callback_articles
+from db.db_api import add_user, article_data, category, count_user
 
 #......................КОМАНДА СТАРТ......................
 async def cmd_start(message: types.Message):
@@ -33,41 +35,6 @@ async def btn_info(message: types.Message):
 async def btn_sponsor(message: types.Message):
     photo_main = open('image/sponsors.png', 'rb')
     await message.answer_photo(caption="<b>Cпонсоров пока нет 😔</b>", photo=photo_main)
-
-#......................КНОПКА КАТАЛОГ......................
-#Открыть каталог
-async def btn_katalog(message: types.Message):
-    photo_main = open('image/catalog.png', 'rb')
-    await message.answer_photo(photo=photo_main)
-    await message.answer(text="<b>🍭Каталог статей, мануалов на любой вкус🍢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n\nЕсли не переходит в какую либо категорию либо в пост, повторите попытку через 10мин.</b>", reply_markup=key_k_0())
-
-#Открыть содержимое категории
-async def btn_kategory(call: types.CallbackQuery):
-    data = call.data
-    await call.message.edit_text("<b>🍭Каталог статей, мануалов на любой вкус🍢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n\nЕсли не переходит в какую либо категорию либо в пост, повторите попытку через 10мин.</b>", reply_markup=key_k_1(data)) 
-    await call.answer()
-
-#Открыть содержимое статьи
-async def btn_article(call: types.CallbackQuery):
-    data = get_articles(call.data)
-    name = data[0][3]
-    avtor = data[0][4]
-    description = data[0][6]
-    link = data[0][5]
-    await call.message.edit_text(f"<b>{fmt.hide_link(link)}{name}\n\n👨‍🚀Автор: {avtor}\n\n📜{description}</b>", reply_markup=key_k_2(call.data))
-    
-
-
-#Кнопка назад
-async def btn_back_lvl0(call: types.CallbackQuery):
-    await call.message.edit_reply_markup(reply_markup=key_k_0()) 
-    await call.answer()
-
-
-
-
-
-
 
 # .....................КНОПКА ПРЕДЛОЖИТЬ МАТЕРИАЛ......................
 extractor = urlextract.URLExtract()
@@ -98,14 +65,33 @@ async def btn_cancel(message: types.Message, state:FSMContext):
         await message.reply("<b>Ждём твоё предложение в другой раз 🙄</b>",reply_markup=main_menu ) 
     await state.finish()
 
-#......................ПОДПИСКА НА БОТА......................
+#......................КНОПКА КАТАЛОГ......................
+async def btn_catalog(message: types.Message):
+    photo_main = open('image/catalog.png', 'rb')
+    await message.answer_photo(photo=photo_main)
+    await message.answer(text="<b>🍭Каталог статей, мануалов на любой вкус🍢⠀⠀⠀⠀⠀⠀</b>", reply_markup=category_kb())
 
-async def subscribe(message: types.Message):
-    await message.reply("Подписка на обновления активирована!")
+async def btn_category(call: types.CallbackQuery):
+    category_id = call.data
+    await call.message.edit_reply_markup(reply_markup=article_kb(category_id))
+    await call.answer()
 
-async def unsubscribe(message: types.Message):
-    await message.reply("Подписка на обновления деактивирована")
 
+
+async def btn_article(call: types.CallbackQuery):
+    article_id = call.data
+    id = article_id[article_id.find(":") + 1 : ]
+    data = article_data(id)
+    await call.message.edit_text(f"<b>{fmt.hide_link(data[0][5])}{data[0][2]}\n\n👨‍🚀Автор: {data[0][3]}\n\n📜{data[0][4]}</b>", reply_markup=(article_kb_info(id)))
+    await call.answer()
+
+async def btn_back_lvl_0(call: types.CallbackQuery):
+    await call.message.edit_reply_markup(reply_markup=category_kb())
+
+async def btn_back_lvl_1(call: types.CallbackQuery):
+    key = call.data
+    id = key[key.find(":") + 1 : ]
+    await call.message.edit_text("<b>🍭Каталог статей, мануалов на любой вкус🍢⠀⠀⠀⠀⠀⠀</b>", reply_markup=article_kb(id))
 
 #......................РЕГТСТРАЦИЯ ХЕНДЛЕРОВ......................
 def register_handlers_client(dp: Dispatcher):
@@ -113,14 +99,12 @@ def register_handlers_client(dp: Dispatcher):
     dp.register_message_handler(btn_info, Text(equals="💎Инфо/Контакт"))
     dp.register_message_handler(btn_sponsor, Text(equals="😎Спонсоры"))
 
-    dp.register_message_handler(btn_katalog, Text(equals="🗂Каталог"))
-    dp.register_callback_query_handler(btn_kategory, Text(equals=get_callback()))
-    dp.register_callback_query_handler(btn_article, Text(equals=get_callback_articles()))
-    dp.register_callback_query_handler(btn_back_lvl0, Text(equals="back_to_lvl_0"))
+    dp.register_message_handler(btn_catalog, Text(equals="🗂Каталог"))
+    dp.register_callback_query_handler(btn_category, Text(equals=category("call_get")))
+    dp.register_callback_query_handler(btn_article, Text(startswith="article_get"))
+    dp.register_callback_query_handler(btn_back_lvl_0, Text(equals="back_to_lvl_0"))
+    dp.register_callback_query_handler(btn_back_lvl_1, Text(startswith="back_to_lvl_1"))
 
     dp.register_message_handler(btn_cancel, Text(equals="❌Отменить"), state="*")
     dp.register_message_handler(btn_help_us, Text(equals="💁Предложить материал"))
     dp.register_message_handler(send_to_admin, state=HelpUs.waiting_for_link)
-
-    dp.register_message_handler(subscribe, commands="subscribe")
-    dp.register_message_handler(unsubscribe, commands="unsubscribe")
